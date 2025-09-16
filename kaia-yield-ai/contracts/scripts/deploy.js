@@ -7,17 +7,26 @@ async function main() {
   console.log("Deploying contracts with account:", deployer.address);
   console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
-  // Deploy MockUSDT for testing (only on testnet)
+  // Use real USDT addresses for Kaia network
   let USDT_ADDRESS;
   if (network.name.includes('testnet') || network.name.includes('baobab')) {
-    console.log("\n1. Deploying MockUSDT (testnet only)...");
-    const MockUSDT = await ethers.getContractFactory("MockUSDT");
-    const mockUSDT = await MockUSDT.deploy();
-    await mockUSDT.waitForDeployment();
-    USDT_ADDRESS = await mockUSDT.getAddress();
-    console.log("MockUSDT deployed to:", USDT_ADDRESS);
+    console.log("\n1. Using Kaia Testnet USDT...");
+    // Real USDT on Kaia Testnet (if available) or deploy MockUSDT
+    if (process.env.USDT_TESTNET_ADDRESS) {
+      USDT_ADDRESS = process.env.USDT_TESTNET_ADDRESS;
+      console.log("Using existing testnet USDT:", USDT_ADDRESS);
+    } else {
+      console.log("Deploying MockUSDT for testing...");
+      const MockUSDT = await ethers.getContractFactory("MockUSDT");
+      const mockUSDT = await MockUSDT.deploy();
+      await mockUSDT.waitForDeployment();
+      USDT_ADDRESS = await mockUSDT.getAddress();
+      console.log("MockUSDT deployed to:", USDT_ADDRESS);
+    }
   } else {
-    USDT_ADDRESS = "0x8bb8f10e2b2f7d6d0e7f7f94b42ac8c7f5e8e6e1"; // Mainnet USDT
+    // Real USDT on Kaia Mainnet
+    USDT_ADDRESS = process.env.USDT_MAINNET_ADDRESS || "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7";
+    console.log("Using Kaia Mainnet USDT:", USDT_ADDRESS);
   }
 
   console.log("\n2. Deploying YieldOptimizer...");

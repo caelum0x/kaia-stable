@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run compile:*)",
+      "Bash(npx hardhat:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(pip install:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

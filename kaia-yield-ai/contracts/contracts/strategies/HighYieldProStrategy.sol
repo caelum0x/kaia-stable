@@ -188,7 +188,7 @@ contract HighYieldProStrategy is BaseStrategy {
     }
     
     function addLossBuffer(uint256 amount) external onlyOwner {
-        USDT.safeTransferFrom(msg.sender, address(this), amount);
+        USDT.transferFrom(msg.sender, address(this), amount);
         lossBuffer += amount;
     }
     

@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const BlockchainService = require('../services/blockchain');
+const DeFiIntegrationService = require('../services/defi');
+const { db, strategyService } = require('../database/connection');
 const Joi = require('joi');
 
 const blockchainService = new BlockchainService();
+const defiService = new DeFiIntegrationService();
 
 const addressSchema = Joi.object({
   address: Joi.string().pattern(/^0x[a-fA-F0-9]{40}$/).required()
@@ -11,21 +14,37 @@ const addressSchema = Joi.object({
 
 router.get('/', async (req, res) => {
   try {
-    const strategies = await blockchainService.getAllStrategies();
-    
-    const enrichedStrategies = strategies.map(strategy => ({
-      ...strategy,
-      apyFormatted: `${(strategy.apy / 100).toFixed(2)}%`,
-      riskLevel: getRiskLevelText(strategy.riskLevel),
-      category: getStrategyCategory(strategy.apy, strategy.riskLevel)
-    }));
+    // Get strategies from database with real-time APY updates
+    const strategies = await strategyService.getAllStrategies();
+
+    // Update APYs with real DeFi protocol data
+    const realTimeAPYs = await defiService.getRealTimeStrategyAPYs();
+
+    const enrichedStrategies = strategies.map(strategy => {
+      const strategyKey = strategy.name.toLowerCase().replace(/\s+/g, '');
+      const realAPY = realTimeAPYs[strategyKey]?.apy || strategy.current_apy;
+
+      return {
+        ...strategy,
+        apy: realAPY,
+        current_apy: realAPY,
+        apyFormatted: `${(realAPY / 100).toFixed(2)}%`,
+        riskLevel: getRiskLevelText(strategy.risk_level),
+        category: getStrategyCategory(realAPY, strategy.risk_level),
+        source: realTimeAPYs[strategyKey]?.source || 'Contract',
+        liquidity: realTimeAPYs[strategyKey]?.liquidity || 'Unknown',
+        lastUpdate: new Date().toISOString()
+      };
+    });
 
     res.json({
       success: true,
       data: enrichedStrategies,
-      count: enrichedStrategies.length
+      count: enrichedStrategies.length,
+      marketData: await defiService.getMarketData()
     });
   } catch (error) {
+    console.error('Strategies fetch error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch strategies',
