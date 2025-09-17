@@ -13,7 +13,7 @@ import {
   ArrowUpRight,
   RefreshCw
 } from 'lucide-react';
-import { kaiaAPI, ProtocolMetrics, UserPortfolio, UserStats } from '../services/api';
+import { kaiaAPI, ProtocolMetrics, UserPortfolio, UserStats, PortfolioPerformanceData, StrategyDistributionData, YieldHistoryData } from '../services/api';
 import {
   AreaChart,
   Area,
@@ -39,35 +39,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
   const [protocolMetrics, setProtocolMetrics] = useState<ProtocolMetrics | null>(null);
   const [userPortfolio, setUserPortfolio] = useState<UserPortfolio | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [performanceData, setPerformanceData] = useState<PortfolioPerformanceData[]>([]);
+  const [strategyDistribution, setStrategyDistribution] = useState<StrategyDistributionData[]>([]);
+  const [yieldHistory, setYieldHistory] = useState<YieldHistoryData[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Mock performance data for charts
-  const performanceData = [
-    { name: 'Jan', portfolio: 1000, market: 1000 },
-    { name: 'Feb', portfolio: 1045, market: 1020 },
-    { name: 'Mar', portfolio: 1098, market: 1035 },
-    { name: 'Apr', portfolio: 1156, market: 1048 },
-    { name: 'May', portfolio: 1220, market: 1065 },
-    { name: 'Jun', portfolio: 1289, market: 1078 },
-  ];
-
-  const strategyDistribution = [
-    { name: 'Stable Earn', value: 35, color: '#10B981' },
-    { name: 'Growth Plus', value: 45, color: '#3B82F6' },
-    { name: 'High Yield Pro', value: 20, color: '#F59E0B' },
-  ];
-
-  const yieldHistory = [
-    { day: '1d', yield: 5.2 },
-    { day: '2d', yield: 5.8 },
-    { day: '3d', yield: 6.1 },
-    { day: '4d', yield: 5.9 },
-    { day: '5d', yield: 6.4 },
-    { day: '6d', yield: 6.8 },
-    { day: '7d', yield: 7.2 },
-  ];
 
   const fetchData = async () => {
     setLoading(true);
@@ -75,6 +53,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       // Fetch real protocol metrics using API service
       const protocolData = await kaiaAPI.analytics.getProtocolMetrics();
       setProtocolMetrics(protocolData);
+
+      // Fetch dashboard analytics data
+      const [performanceData, strategyData, yieldData] = await Promise.all([
+        kaiaAPI.analytics.getPortfolioPerformance(userAddress),
+        kaiaAPI.analytics.getStrategyDistribution(userAddress),
+        kaiaAPI.analytics.getYieldHistory()
+      ]);
+
+      setPerformanceData(performanceData);
+      setStrategyDistribution(strategyData);
+      setYieldHistory(yieldData);
 
       // Fetch user-specific data if userAddress is provided
       if (userAddress) {
@@ -218,7 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
             <div className="text-gray-400 text-sm">Active Users</div>
             <div className="flex items-center mt-2 text-purple-400 text-sm">
               <Zap className="w-4 h-4 mr-1" />
-              +{Math.floor(Math.random() * 10) + 1} today
+              +{protocolMetrics?.protocol?.newUsersToday || 0} today
             </div>
           </div>
 

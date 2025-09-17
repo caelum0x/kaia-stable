@@ -76,6 +76,7 @@ const aiRoutes = require('./routes/ai');
 const gameRoutes = require('./routes/game');
 const lineRoutes = require('./routes/line');
 const analyticsRoutes = require('./routes/analytics');
+const socialRoutes = require('./routes/social');
 
 app.use('/api/strategies', strategiesRoutes);
 app.use('/api/yield', yieldRoutes);
@@ -83,6 +84,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/line', lineRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/social', socialRoutes);
 
 // Health check endpoint with database connectivity
 app.get('/health', async (req, res) => {
@@ -123,7 +125,8 @@ app.get('/', (req, res) => {
       ai: '/api/ai',
       game: '/api/game',
       line: '/api/line',
-      analytics: '/api/analytics'
+      analytics: '/api/analytics',
+      social: '/api/social'
     }
   });
 });

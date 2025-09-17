@@ -27,7 +27,8 @@ import {
   DollarSign,
   Percent,
   Clock,
-  Shield
+  Shield,
+  Activity
 } from 'lucide-react';
 import {
   AreaChart,
@@ -45,108 +46,47 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { kaiaAPI, LeaderboardEntry, SocialStrategy, SocialFeedPost, SocialMetrics, SocialPerformanceData } from '../services/api';
 
-interface LeaderboardEntry {
-  user: string;
-  displayName: string;
-  avatar: string;
-  score: number;
-  level: number;
-  winRate: number;
-  totalEarned: number;
-  strategies: number;
-  followers: number;
-  isFollowing?: boolean;
-  trend: 'up' | 'down' | 'stable';
-  change24h: number;
-  socialBonus: boolean;
-}
-
-interface TradingStrategy {
-  id: number;
-  user: string;
-  name: string;
-  description: string;
-  apy: number;
-  risk: number;
-  followers: number;
-  copiers: number;
-  performance: number;
-  timeframe: string;
-  tags: string[];
-  isPublic: boolean;
-  likes: number;
-  comments: number;
-}
-
-interface SocialPost {
-  id: string;
-  user: string;
-  username: string;
-  avatar: string;
-  content: string;
-  strategy?: string;
-  performance: number;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  isLiked?: boolean;
-}
 
 const SocialTrading: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'strategies' | 'feed'>('leaderboard');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [strategies, setStrategies] = useState<TradingStrategy[]>([]);
-  const [socialFeed, setSocialFeed] = useState<SocialPost[]>([]);
+  const [strategies, setStrategies] = useState<SocialStrategy[]>([]);
+  const [socialFeed, setSocialFeed] = useState<SocialFeedPost[]>([]);
+  const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
+  const [performanceData, setPerformanceData] = useState<SocialPerformanceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
-  // Real leaderboard data will be fetched from blockchain
-
-  // Real strategies and social feed will be fetched from backend API
-
-  const performanceData = [
-    { day: 'Mon', performance: 98 },
-    { day: 'Tue', performance: 102 },
-    { day: 'Wed', performance: 105 },
-    { day: 'Thu', performance: 103 },
-    { day: 'Fri', performance: 108 },
-    { day: 'Sat', performance: 112 },
-    { day: 'Sun', performance: 115 }
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch real leaderboard data from blockchain
-        const leaderboardResponse = await fetch('/api/game/leaderboard');
-        if (leaderboardResponse.ok) {
-          const leaderboardData = await leaderboardResponse.json();
-          setLeaderboard(leaderboardData);
-        }
+        // Fetch real data using API service
+        const [leaderboardData, socialStrategies, socialFeedData, socialMetricsData, performanceChartData] = await Promise.all([
+          kaiaAPI.game.getLeaderboard('social', 'weekly', 50),
+          kaiaAPI.social.getSocialStrategies(),
+          kaiaAPI.social.getSocialFeed(),
+          kaiaAPI.analytics.getSocialMetrics(),
+          kaiaAPI.analytics.getSocialPerformance()
+        ]);
 
-        // Fetch real strategies from blockchain
-        const strategiesResponse = await fetch('/api/strategies/social');
-        if (strategiesResponse.ok) {
-          const strategiesData = await strategiesResponse.json();
-          setStrategies(strategiesData);
-        }
-
-        // Fetch social feed from backend
-        const feedResponse = await fetch('/api/social/feed');
-        if (feedResponse.ok) {
-          const feedData = await feedResponse.json();
-          setSocialFeed(feedData);
-        }
+        setLeaderboard(leaderboardData.leaderboard);
+        setStrategies(socialStrategies);
+        setSocialFeed(socialFeedData.posts);
+        setSocialMetrics(socialMetricsData);
+        setPerformanceData(performanceChartData);
       } catch (error) {
         console.error('Error fetching social data:', error);
         // Initialize with empty arrays instead of mock data
         setLeaderboard([]);
         setStrategies([]);
         setSocialFeed([]);
+        setSocialMetrics(null);
+        setPerformanceData([]);
       } finally {
         setLoading(false);
       }
@@ -271,7 +211,7 @@ const SocialTrading: React.FC = () => {
                     <Users className="w-8 h-8 text-blue-400" />
                     <span className="text-2xl">👥</span>
                   </div>
-                  <div className="text-2xl font-bold">1,247</div>
+                  <div className="text-2xl font-bold">{socialMetrics?.activeTraders?.toLocaleString() || '0'}</div>
                   <div className="text-gray-400 text-sm">Active Traders</div>
                 </div>
 
@@ -280,7 +220,7 @@ const SocialTrading: React.FC = () => {
                     <Copy className="w-8 h-8 text-green-400" />
                     <span className="text-2xl">📋</span>
                   </div>
-                  <div className="text-2xl font-bold">5,678</div>
+                  <div className="text-2xl font-bold">{socialMetrics?.strategyCopies?.toLocaleString() || '0'}</div>
                   <div className="text-gray-400 text-sm">Strategy Copies</div>
                 </div>
 
@@ -289,7 +229,7 @@ const SocialTrading: React.FC = () => {
                     <DollarSign className="w-8 h-8 text-yellow-400" />
                     <span className="text-2xl">💰</span>
                   </div>
-                  <div className="text-2xl font-bold">$2.4M</div>
+                  <div className="text-2xl font-bold">{socialMetrics?.socialVolume || '$0'}</div>
                   <div className="text-gray-400 text-sm">Social Volume</div>
                 </div>
 
@@ -298,7 +238,7 @@ const SocialTrading: React.FC = () => {
                     <Percent className="w-8 h-8 text-purple-400" />
                     <span className="text-2xl">📈</span>
                   </div>
-                  <div className="text-2xl font-bold">18.7%</div>
+                  <div className="text-2xl font-bold">{socialMetrics?.averageSocialAPY?.toFixed(1) || '0.0'}%</div>
                   <div className="text-gray-400 text-sm">Avg Social APY</div>
                 </div>
               </div>
@@ -315,7 +255,7 @@ const SocialTrading: React.FC = () => {
                 <div className="space-y-0">
                   {leaderboard.map((entry, index) => (
                     <motion.div
-                      key={entry.user}
+                      key={entry.user.address}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
@@ -325,53 +265,48 @@ const SocialTrading: React.FC = () => {
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center space-x-3">
                             {getRankIcon(index)}
-                            <div className="text-3xl">{entry.avatar}</div>
+                            <div className="text-3xl">👤</div>
                           </div>
 
                           <div>
                             <div className="flex items-center space-x-2">
-                              <h3 className="font-bold text-lg">{entry.displayName}</h3>
-                              {entry.socialBonus && (
+                              <h3 className="font-bold text-lg">{entry.user.displayName}</h3>
+                              {entry.user.hasLineAccount && (
                                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded px-2 py-1">
                                   <Sparkles className="w-3 h-3 text-yellow-400" />
                                 </div>
                               )}
                               <div className="bg-purple-500/20 border border-purple-500/30 rounded px-2 py-1 text-xs">
-                                Level {entry.level}
+                                Level {entry.stats.level}
                               </div>
                             </div>
-                            <div className="text-sm text-gray-400">{entry.user}</div>
+                            <div className="text-sm text-gray-400">{entry.user.shortAddress}</div>
 
                             <div className="flex items-center space-x-4 mt-2 text-sm">
                               <div className="flex items-center text-green-400">
                                 <DollarSign className="w-3 h-3 mr-1" />
-                                ${entry.totalEarned.toLocaleString()}
+                                ${entry.stats.totalRewards.toLocaleString()}
                               </div>
                               <div className="flex items-center text-blue-400">
                                 <Target className="w-3 h-3 mr-1" />
-                                {entry.winRate}% Win Rate
+                                {entry.performance.roi}
                               </div>
                               <div className="flex items-center text-purple-400">
                                 <Users className="w-3 h-3 mr-1" />
-                                {entry.followers} Followers
+                                {entry.stats.successfulStrategies} Strategies
                               </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <div className="text-2xl font-bold">{entry.score}</div>
-                          <div className="text-sm text-gray-400 mb-2">Score</div>
+                          <div className="text-2xl font-bold">{entry.stats.points}</div>
+                          <div className="text-sm text-gray-400 mb-2">Points</div>
 
                           <div className="flex items-center space-x-2">
-                            <div className={`flex items-center text-sm ${
-                              entry.change24h > 0 ? 'text-green-400' :
-                              entry.change24h < 0 ? 'text-red-400' : 'text-gray-400'
-                            }`}>
-                              {getTrendIcon(entry.trend)}
-                              <span className="ml-1">
-                                {entry.change24h > 0 ? '+' : ''}{entry.change24h}%
-                              </span>
+                            <div className="flex items-center text-sm text-green-400">
+                              <TrendingUp className="w-4 h-4 mr-1" />
+                              <span>#{entry.rank}</span>
                             </div>
 
                             <motion.button
@@ -533,6 +468,7 @@ const SocialTrading: React.FC = () => {
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
+                            onClick={() => kaiaAPI.social.copyStrategy(strategy.id, 100)}
                             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
                           >
                             <Copy className="w-4 h-4 mr-1 inline" />
@@ -597,23 +533,23 @@ const SocialTrading: React.FC = () => {
                     className="bg-black/30 backdrop-blur-lg rounded-2xl p-6 border border-white/10"
                   >
                     <div className="flex items-start space-x-3 mb-4">
-                      <div className="text-2xl">{post.avatar}</div>
+                      <div className="text-2xl">{post.userAvatar}</div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="font-bold">{post.username}</h4>
-                          <span className="text-gray-400 text-sm">{post.timestamp}</span>
+                          <h4 className="font-bold">{post.userName}</h4>
+                          <span className="text-gray-400 text-sm">{new Date(post.timestamp).toLocaleDateString()}</span>
                         </div>
                         <p className="text-gray-300">{post.content}</p>
 
-                        {post.strategy && (
+                        {post.strategyName && (
                           <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3 mt-3">
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="font-semibold text-purple-300">{post.strategy}</div>
+                                <div className="font-semibold text-purple-300">{post.strategyName}</div>
                                 <div className="text-sm text-gray-400">Strategy Performance</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-2xl font-bold text-green-400">{post.performance}%</div>
+                                <div className="text-2xl font-bold text-green-400">{post.performance?.toFixed(1) || '0.0'}%</div>
                                 <div className="text-sm text-gray-400">APY</div>
                               </div>
                             </div>
@@ -626,6 +562,7 @@ const SocialTrading: React.FC = () => {
                       <div className="flex items-center space-x-6">
                         <motion.button
                           whileTap={{ scale: 0.95 }}
+                          onClick={() => kaiaAPI.social.likePost(post.id)}
                           className={`flex items-center space-x-1 ${
                             post.isLiked ? 'text-red-400' : 'text-gray-400 hover:text-red-400'
                           }`}
@@ -644,6 +581,7 @@ const SocialTrading: React.FC = () => {
 
                         <motion.button
                           whileTap={{ scale: 0.95 }}
+                          onClick={() => kaiaAPI.social.sharePost(post.id)}
                           className="flex items-center space-x-1 text-gray-400 hover:text-green-400"
                         >
                           <Share2 className="w-4 h-4" />
@@ -651,13 +589,16 @@ const SocialTrading: React.FC = () => {
                         </motion.button>
                       </div>
 
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
-                      >
-                        Follow Strategy
-                      </motion.button>
+                      {post.strategyId && (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => kaiaAPI.social.followStrategy(post.strategyId!)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
+                        >
+                          Follow Strategy
+                        </motion.button>
+                      )}
                     </div>
                   </motion.div>
                 ))}

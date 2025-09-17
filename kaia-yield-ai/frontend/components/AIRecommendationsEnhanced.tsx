@@ -36,28 +36,8 @@ import {
   BarChart,
   Bar
 } from 'recharts';
+import { kaiaAPI, AIRecommendation, EnhancedUserRiskProfile, MLMetrics, RadarData, PerformancePrediction, StrategyComparison } from '../services/api';
 
-interface AIRecommendation {
-  strategy_id: number;
-  strategy_name: string;
-  score: number;
-  confidence: 'High' | 'Medium' | 'Low';
-  explanation: string;
-  expected_return: number;
-  apy: number;
-  risk_level: number;
-  category: string;
-}
-
-interface UserRiskProfile {
-  riskProfile: string;
-  riskTolerance: number;
-  averageRisk: number;
-  diversification: number;
-  strategiesUsed: number;
-  totalDeposited: string;
-  recommendations: string[];
-}
 
 interface AIRecommendationsEnhancedProps {
   userAddress?: string;
@@ -69,43 +49,15 @@ const AIRecommendationsEnhanced: React.FC<AIRecommendationsEnhancedProps> = ({
   investmentAmount = 1000
 }) => {
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
-  const [riskProfile, setRiskProfile] = useState<UserRiskProfile | null>(null);
+  const [riskProfile, setRiskProfile] = useState<EnhancedUserRiskProfile | null>(null);
+  const [mlMetrics, setMlMetrics] = useState<MLMetrics | null>(null);
+  const [radarData, setRadarData] = useState<RadarData[]>([]);
+  const [performancePrediction, setPerformancePrediction] = useState<PerformancePrediction[]>([]);
+  const [strategyComparison, setStrategyComparison] = useState<StrategyComparison[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<number | null>(null);
 
-  // Mock ML confidence data
-  const mlMetrics = {
-    modelAccuracy: 94.2,
-    predictionConfidence: 87.5,
-    dataQuality: 92.8,
-    marketVolatility: 15.3,
-    lastTraining: '2 hours ago'
-  };
-
-  const radarData = [
-    { metric: 'Return Potential', value: 85, fullMark: 100 },
-    { metric: 'Risk Management', value: 92, fullMark: 100 },
-    { metric: 'Liquidity', value: 88, fullMark: 100 },
-    { metric: 'Stability', value: 76, fullMark: 100 },
-    { metric: 'Diversification', value: 82, fullMark: 100 },
-    { metric: 'Market Fit', value: 90, fullMark: 100 }
-  ];
-
-  const performancePrediction = [
-    { month: 'Month 1', conservative: 102, predicted: 105, optimistic: 108 },
-    { month: 'Month 2', conservative: 104, predicted: 111, optimistic: 118 },
-    { month: 'Month 3', conservative: 106, predicted: 118, optimistic: 129 },
-    { month: 'Month 4', conservative: 108, predicted: 125, optimistic: 142 },
-    { month: 'Month 5', conservative: 110, predicted: 133, optimistic: 156 },
-    { month: 'Month 6', conservative: 112, predicted: 141, optimistic: 172 }
-  ];
-
-  const strategyComparison = [
-    { name: 'Stable Earn', risk: 2, apy: 5.2, score: 85 },
-    { name: 'Growth Plus', risk: 5, apy: 11.8, score: 92 },
-    { name: 'High Yield Pro', risk: 8, apy: 26.5, score: 78 }
-  ];
 
   const fetchAIRecommendations = async () => {
     setLoading(true);
@@ -115,61 +67,32 @@ const AIRecommendationsEnhanced: React.FC<AIRecommendationsEnhancedProps> = ({
       // Simulate AI processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Mock recommendations based on actual backend structure
-      const mockRecommendations: AIRecommendation[] = [
-        {
-          strategy_id: 2,
-          strategy_name: 'Growth Plus',
-          score: 92.3,
-          confidence: 'High',
-          explanation: 'Excellent match: This strategy matches your risk tolerance well, offers 11.8% APY.',
-          expected_return: 118.00,
-          apy: 1180,
-          risk_level: 5,
-          category: 'Balanced'
-        },
-        {
-          strategy_id: 1,
-          strategy_name: 'Stable Earn',
-          score: 85.7,
-          confidence: 'High',
-          explanation: 'Good fit: This strategy is more conservative than your usual preference, offers 5.2% APY.',
-          expected_return: 52.00,
-          apy: 520,
-          risk_level: 2,
-          category: 'Conservative'
-        },
-        {
-          strategy_id: 3,
-          strategy_name: 'High Yield Pro',
-          score: 78.1,
-          confidence: 'Medium',
-          explanation: 'Consider carefully: This strategy is more aggressive than your usual preference, offers 26.5% APY.',
-          expected_return: 265.00,
-          apy: 2650,
-          risk_level: 8,
-          category: 'Aggressive'
-        }
-      ];
+      // Fetch real AI data from backend
+      const [aiRecommendations, userRiskData, mlMetricsData, radarChartData, performancePredData, strategyCompData] = await Promise.all([
+        kaiaAPI.analytics.getAIRecommendations(userAddress, investmentAmount),
+        userAddress ? kaiaAPI.analytics.getUserRiskProfile(userAddress) : null,
+        kaiaAPI.analytics.getMLMetrics(),
+        kaiaAPI.analytics.getPortfolioRadarData(userAddress),
+        kaiaAPI.analytics.getPerformancePrediction(selectedStrategy || undefined, investmentAmount),
+        kaiaAPI.analytics.getStrategyComparison()
+      ]);
 
-      setRecommendations(mockRecommendations);
-
-      // Mock risk profile
-      setRiskProfile({
-        riskProfile: 'Medium Risk',
-        riskTolerance: 6,
-        averageRisk: 5.2,
-        diversification: 65,
-        strategiesUsed: 2,
-        totalDeposited: '1000.00',
-        recommendations: [
-          'Your portfolio is well-balanced',
-          'Consider diversifying across more strategies to reduce risk'
-        ]
-      });
+      setRecommendations(aiRecommendations);
+      setRiskProfile(userRiskData);
+      setMlMetrics(mlMetricsData);
+      setRadarData(radarChartData);
+      setPerformancePrediction(performancePredData);
+      setStrategyComparison(strategyCompData);
 
     } catch (error) {
       console.error('Error fetching AI recommendations:', error);
+      // Set empty/default states on error
+      setRecommendations([]);
+      setRiskProfile(null);
+      setMlMetrics(null);
+      setRadarData([]);
+      setPerformancePrediction([]);
+      setStrategyComparison([]);
     } finally {
       setLoading(false);
       setAnalyzing(false);
@@ -211,7 +134,7 @@ const AIRecommendationsEnhanced: React.FC<AIRecommendationsEnhancedProps> = ({
           >
             <Brain className="w-8 h-8 mx-auto mb-2 text-purple-400" />
             <div className="text-lg font-semibold">AI Analyzing Your Profile...</div>
-            <div className="text-sm text-gray-300">Processing {Math.floor(Math.random() * 10000)} data points</div>
+            <div className="text-sm text-gray-300">Processing market data and user patterns...</div>
           </motion.div>
         </motion.div>
       </div>
@@ -263,23 +186,23 @@ const AIRecommendationsEnhanced: React.FC<AIRecommendationsEnhancedProps> = ({
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{mlMetrics.modelAccuracy}%</div>
+              <div className="text-2xl font-bold text-green-400">{mlMetrics?.modelAccuracy?.toFixed(1) || '0.0'}%</div>
               <div className="text-sm text-gray-400">Model Accuracy</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{mlMetrics.predictionConfidence}%</div>
+              <div className="text-2xl font-bold text-blue-400">{mlMetrics?.predictionConfidence?.toFixed(1) || '0.0'}%</div>
               <div className="text-sm text-gray-400">Confidence</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">{mlMetrics.dataQuality}%</div>
+              <div className="text-2xl font-bold text-purple-400">{mlMetrics?.dataQuality?.toFixed(1) || '0.0'}%</div>
               <div className="text-sm text-gray-400">Data Quality</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-400">{mlMetrics.marketVolatility}%</div>
+              <div className="text-2xl font-bold text-yellow-400">{mlMetrics?.marketVolatility?.toFixed(1) || '0.0'}%</div>
               <div className="text-sm text-gray-400">Market Volatility</div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-bold text-gray-300">{mlMetrics.lastTraining}</div>
+              <div className="text-sm font-bold text-gray-300">{mlMetrics?.lastTraining || 'N/A'}</div>
               <div className="text-sm text-gray-400">Last Training</div>
             </div>
           </div>
