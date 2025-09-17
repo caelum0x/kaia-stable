@@ -181,53 +181,105 @@ export default function AIRecommendations({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <div className="relative overflow-hidden backdrop-blur-xl rounded-2xl bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-slate-700/50 shadow-xl shadow-black/20">
+      {/* Animated Background */}
+      <div className="absolute inset-0 opacity-20">
+        <motion.div
+          animate={{
+            background: [
+              "radial-gradient(circle at 25% 25%, rgba(147,51,234,0.1) 0%, transparent 50%)",
+              "radial-gradient(circle at 75% 75%, rgba(59,130,246,0.1) 0%, transparent 50%)",
+              "radial-gradient(circle at 50% 50%, rgba(16,185,129,0.1) 0%, transparent 50%)"
+            ]
+          }}
+          transition={{ duration: 8, repeat: Infinity, repeatType: "reverse" }}
+          className="absolute inset-0"
+        />
+      </div>
+
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="relative z-10 p-6 border-b border-slate-700/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="bg-primary-100 p-2 rounded-lg">
-              <Bot className="h-6 w-6 text-primary-600" />
-            </div>
+          <div className="flex items-center space-x-4">
+            <motion.div
+              animate={{ 
+                rotate: isRefreshing ? 360 : 0,
+                scale: isRefreshing ? [1, 1.1, 1] : 1
+              }}
+              transition={{ 
+                rotate: { duration: 2, ease: "linear" },
+                scale: { duration: 1, repeat: isRefreshing ? Infinity : 0 }
+              }}
+              className="p-3 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-600/10 border border-purple-500/30"
+            >
+              <Brain className="h-6 w-6 text-purple-400" />
+            </motion.div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">AI Recommendations</h2>
-              <p className="text-sm text-gray-600">Personalized strategies powered by machine learning</p>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+                AI Recommendations
+              </h2>
+              <p className="text-sm text-slate-400 font-light tracking-wide">
+                Personalized strategies powered by machine learning
+              </p>
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
             onClick={refreshRecommendations}
             disabled={isRefreshing}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-3 rounded-xl bg-slate-800/50 border border-slate-600/50 text-slate-400 hover:text-white hover:border-slate-500/50 transition-all duration-300 backdrop-blur-sm"
           >
             <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
+          </motion.button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 mt-4 bg-gray-100 rounded-lg p-1">
-          <button
+        {/* Futuristic Tabs */}
+        <div className="flex space-x-2 mt-6 p-1 bg-slate-800/30 rounded-2xl border border-slate-700/30 backdrop-blur-sm">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setSelectedTab('recommendations')}
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`relative flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
               selectedTab === 'recommendations'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-purple-500/20 to-blue-600/10 text-white border border-purple-500/30 shadow-lg shadow-purple-500/10'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700/30'
             }`}
           >
-            <Brain className="h-4 w-4 inline mr-2" />
-            Strategies
-          </button>
-          <button
+            <div className="flex items-center justify-center space-x-2">
+              <Brain className="h-4 w-4" />
+              <span>Strategies</span>
+            </div>
+            {selectedTab === 'recommendations' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-600/5 rounded-xl border border-purple-500/20"
+              />
+            )}
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setSelectedTab('insights')}
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`relative flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
               selectedTab === 'insights'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-600/10 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/10'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700/30'
             }`}
           >
-            <Lightbulb className="h-4 w-4 inline mr-2" />
-            Insights
-          </button>
+            <div className="flex items-center justify-center space-x-2">
+              <Lightbulb className="h-4 w-4" />
+              <span>Insights</span>
+            </div>
+            {selectedTab === 'insights' && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-600/5 rounded-xl border border-emerald-500/20"
+              />
+            )}
+          </motion.button>
         </div>
       </div>
 
