@@ -24,8 +24,8 @@ async function main() {
       console.log("TestnetUSDT deployed to:", USDT_ADDRESS);
     }
   } else {
-    // Real USDT on Kaia Mainnet
-    USDT_ADDRESS = process.env.USDT_MAINNET_ADDRESS || "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7";
+    // Real USDT on Kaia Mainnet - Official Kaia-native USDT address
+    USDT_ADDRESS = process.env.USDT_MAINNET_ADDRESS || "0x19Aac5f612f524B754CA7e7c41cbFa2E981A4432";
     console.log("Using Kaia Mainnet USDT:", USDT_ADDRESS);
   }
 
