@@ -2,10 +2,14 @@ const express = require('express');
 const router = express.Router();
 const BlockchainService = require('../services/blockchain');
 const DeFiIntegrationService = require('../services/defi');
+const DuneAnalyticsService = require('../services/duneAnalytics');
 const { db } = require('../database/connection');
+const { catchAsync } = require('../middleware/errorHandler');
+const Joi = require('joi');
 
 const blockchainService = new BlockchainService();
 const defiService = new DeFiIntegrationService();
+const duneService = new DuneAnalyticsService();
 
 // Get comprehensive protocol metrics
 router.get('/protocol-metrics', async (req, res) => {
@@ -398,5 +402,290 @@ function getTimeAgo(timestamp) {
   if (diffHours < 24) return `${diffHours}h ago`;
   return `${diffDays}d ago`;
 }
+
+// DUNE ANALYTICS ROUTES
+// ======================
+
+// Get Dune Analytics comprehensive dashboard
+router.get('/dune/dashboard', catchAsync(async (req, res) => {
+  const contractAddresses = {
+    yieldOptimizer: process.env.YIELD_OPTIMIZER_ADDRESS,
+    gameRewards: process.env.GAME_REWARDS_ADDRESS,
+    strategies: {
+      stableEarn: process.env.STABLE_EARN_STRATEGY_ADDRESS,
+      growthPlus: process.env.GROWTH_PLUS_STRATEGY_ADDRESS,
+      highYieldPro: process.env.HIGH_YIELD_PRO_STRATEGY_ADDRESS
+    }
+  };
+
+  if (!contractAddresses.yieldOptimizer || !contractAddresses.gameRewards) {
+    return res.status(400).json({
+      success: false,
+      error: 'Contract addresses not configured',
+      message: 'Please ensure YIELD_OPTIMIZER_ADDRESS and GAME_REWARDS_ADDRESS are set'
+    });
+  }
+
+  const dashboard = await duneService.getComprehensiveDashboard(contractAddresses);
+
+  res.json({
+    success: true,
+    data: dashboard,
+    metadata: {
+      source: 'Dune Analytics',
+      network: 'Kaia',
+      lastUpdated: dashboard.lastUpdated,
+      contracts: contractAddresses,
+      dashboardUrl: `https://dune.com/kaia-yield-ai/kaia-wave-hackathon`
+    }
+  });
+}));
+
+// Get Dune protocol overview
+router.get('/dune/protocol-overview', catchAsync(async (req, res) => {
+  const contractAddress = process.env.YIELD_OPTIMIZER_ADDRESS;
+  
+  if (!contractAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'YieldOptimizer contract address not configured'
+    });
+  }
+
+  const overview = await duneService.getProtocolOverview(contractAddress);
+
+  res.json({
+    success: true,
+    data: overview,
+    metadata: {
+      contract: contractAddress,
+      queryType: 'protocol-overview',
+      lastUpdated: new Date().toISOString(),
+      source: 'Dune Analytics'
+    }
+  });
+}));
+
+// Get Dune strategy performance
+router.get('/dune/strategy-performance', catchAsync(async (req, res) => {
+  const contractAddress = process.env.YIELD_OPTIMIZER_ADDRESS;
+  
+  if (!contractAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'YieldOptimizer contract address not configured'
+    });
+  }
+
+  const performance = await duneService.getStrategyPerformance(contractAddress);
+
+  res.json({
+    success: true,
+    data: performance,
+    metadata: {
+      contract: contractAddress,
+      queryType: 'strategy-performance',
+      lastUpdated: new Date().toISOString(),
+      source: 'Dune Analytics'
+    }
+  });
+}));
+
+// Get Dune AI recommendation metrics
+router.get('/dune/ai-metrics', catchAsync(async (req, res) => {
+  const contractAddress = process.env.YIELD_OPTIMIZER_ADDRESS;
+  
+  if (!contractAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'YieldOptimizer contract address not configured'
+    });
+  }
+
+  const aiMetrics = await duneService.getAIRecommendationMetrics(contractAddress);
+
+  // Calculate summary statistics
+  const summary = {
+    totalRecommendations: aiMetrics.reduce((sum, metric) => sum + metric.totalRecommendations, 0),
+    averageAccuracy: aiMetrics.reduce((sum, metric) => sum + metric.accuracyRate, 0) / aiMetrics.length,
+    totalVolumeInfluenced: aiMetrics.reduce((sum, metric) => sum + metric.totalVolumeInfluenced, 0),
+    averageConfidence: aiMetrics.reduce((sum, metric) => sum + metric.averageConfidence, 0) / aiMetrics.length
+  };
+
+  res.json({
+    success: true,
+    data: {
+      strategies: aiMetrics,
+      summary: summary
+    },
+    metadata: {
+      contract: contractAddress,
+      queryType: 'ai-recommendations',
+      lastUpdated: new Date().toISOString(),
+      source: 'Dune Analytics'
+    }
+  });
+}));
+
+// Get Dune gamification metrics
+router.get('/dune/gamification', catchAsync(async (req, res) => {
+  const contractAddress = process.env.GAME_REWARDS_ADDRESS;
+  
+  if (!contractAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'GameRewards contract address not configured'
+    });
+  }
+
+  const gamificationMetrics = await duneService.getGamificationMetrics(contractAddress);
+
+  // Calculate summary statistics
+  const summary = {
+    totalMissions: gamificationMetrics.length,
+    totalCompletions: gamificationMetrics.reduce((sum, mission) => sum + mission.completions, 0),
+    totalRewardsDistributed: gamificationMetrics.reduce((sum, mission) => sum + mission.totalRewardsDistributed, 0),
+    averageCompletionRate: gamificationMetrics.reduce((sum, mission) => sum + mission.completions, 0) / gamificationMetrics.length,
+    mostPopularMission: gamificationMetrics.reduce((max, mission) => 
+      mission.completions > max.completions ? mission : max, gamificationMetrics[0])
+  };
+
+  res.json({
+    success: true,
+    data: {
+      missions: gamificationMetrics,
+      summary: summary
+    },
+    metadata: {
+      contract: contractAddress,
+      queryType: 'gamification',
+      lastUpdated: new Date().toISOString(),
+      source: 'Dune Analytics'
+    }
+  });
+}));
+
+// Get Dune social/LINE integration metrics
+router.get('/dune/social', catchAsync(async (req, res) => {
+  const contractAddress = process.env.YIELD_OPTIMIZER_ADDRESS;
+  
+  if (!contractAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'YieldOptimizer contract address not configured'
+    });
+  }
+
+  const socialMetrics = await duneService.getSocialMetrics(contractAddress);
+
+  // Calculate growth trends
+  const latest = socialMetrics[socialMetrics.length - 1];
+  const previous = socialMetrics[socialMetrics.length - 2];
+  
+  const trends = latest && previous ? {
+    lineUserGrowth: ((latest.lineConnectedUsers - previous.lineConnectedUsers) / previous.lineConnectedUsers) * 100,
+    totalUserGrowth: ((latest.totalUsers - previous.totalUsers) / previous.totalUsers) * 100,
+    integrationRateChange: latest.lineIntegrationRate - previous.lineIntegrationRate
+  } : null;
+
+  res.json({
+    success: true,
+    data: {
+      metrics: socialMetrics,
+      trends: trends,
+      summary: latest ? {
+        currentLineUsers: latest.lineConnectedUsers,
+        currentTotalUsers: latest.totalUsers,
+        currentIntegrationRate: latest.lineIntegrationRate
+      } : null
+    },
+    metadata: {
+      contract: contractAddress,
+      queryType: 'social-metrics',
+      lastUpdated: new Date().toISOString(),
+      source: 'Dune Analytics'
+    }
+  });
+}));
+
+// Get live Dune dashboard URL
+router.get('/dune/dashboard-url', (req, res) => {
+  const dashboardUrl = process.env.DUNE_DASHBOARD_URL || 'https://dune.com/kaia-yield-ai/kaia-wave-hackathon';
+  
+  res.json({
+    success: true,
+    data: {
+      dashboardUrl: dashboardUrl,
+      embedUrl: `${dashboardUrl}?embed=true`,
+      publicUrl: dashboardUrl,
+      apiStatus: !!process.env.DUNE_API_KEY ? 'configured' : 'not-configured'
+    }
+  });
+});
+
+// Initialize Dune queries for first-time setup
+router.post('/dune/initialize', catchAsync(async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      error: 'Query initialization not allowed in production'
+    });
+  }
+
+  const queries = await duneService.initializeQueries();
+
+  res.json({
+    success: true,
+    message: 'Dune Analytics queries ready for initialization',
+    data: {
+      queries: queries,
+      instructions: [
+        '1. Go to https://dune.com/browse/queries',
+        '2. Create a new query for each listed query type',
+        '3. Copy the SQL from /analytics/dune-dashboard.sql',
+        '4. Save each query and note the Query ID',
+        '5. Update your .env file with the DUNE_*_QUERY_ID variables',
+        '6. Set DUNE_API_KEY in your environment',
+        '7. Test the endpoints to verify integration'
+      ],
+      nextSteps: {
+        dashboard: 'https://dune.com/create',
+        documentation: 'https://docs.dune.com/api-reference/',
+        support: 'https://discord.gg/dunecom'
+      }
+    }
+  });
+}));
+
+// Health check for Dune Analytics
+router.get('/dune/health', (req, res) => {
+  const health = {
+    duneApiConfigured: !!process.env.DUNE_API_KEY,
+    contractAddressesConfigured: !!(process.env.YIELD_OPTIMIZER_ADDRESS && process.env.GAME_REWARDS_ADDRESS),
+    queryIdsConfigured: !!(
+      process.env.DUNE_PROTOCOL_OVERVIEW_QUERY_ID ||
+      process.env.DUNE_STRATEGY_PERFORMANCE_QUERY_ID ||
+      process.env.DUNE_USER_ENGAGEMENT_QUERY_ID
+    ),
+    dashboardUrlConfigured: !!process.env.DUNE_DASHBOARD_URL
+  };
+
+  const status = Object.values(health).every(v => v) ? 'fully-configured' : 'needs-setup';
+
+  res.json({
+    success: true,
+    data: {
+      ...health,
+      status: status,
+      fallbackMode: !health.queryIdsConfigured ? 'using-mock-data' : 'using-real-data',
+      setupInstructions: status !== 'fully-configured' ? [
+        'Set DUNE_API_KEY environment variable',
+        'Deploy contracts and set addresses in environment',
+        'Create Dune queries and set query IDs',
+        'Set DUNE_DASHBOARD_URL for public dashboard'
+      ] : null
+    }
+  });
+});
 
 module.exports = router;
