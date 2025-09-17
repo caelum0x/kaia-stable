@@ -3,7 +3,15 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['cdn.example.com'],
+    domains: [
+      'kaia.io',
+      'line-scdn.net',
+      'coin-images.coingecko.com',
+      'assets.coingecko.com',
+      'raw.githubusercontent.com',
+      'cloudflare-ipfs.com',
+      'ipfs.io'
+    ],
     unoptimized: true
   },
   env: {

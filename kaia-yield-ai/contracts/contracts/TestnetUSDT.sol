@@ -4,10 +4,10 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockUSDT is ERC20, Ownable {
+contract TestnetUSDT is ERC20, Ownable {
     uint8 private _decimals = 6;
-    
-    constructor() ERC20("Mock USDT", "USDT") Ownable(msg.sender) {
+
+    constructor() ERC20("Kaia Testnet USDT", "tUSDT") Ownable(msg.sender) {
         _mint(msg.sender, 1000000 * 10**_decimals);
     }
     

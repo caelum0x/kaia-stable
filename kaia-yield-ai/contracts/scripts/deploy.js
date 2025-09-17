@@ -16,12 +16,12 @@ async function main() {
       USDT_ADDRESS = process.env.USDT_TESTNET_ADDRESS;
       console.log("Using existing testnet USDT:", USDT_ADDRESS);
     } else {
-      console.log("Deploying MockUSDT for testing...");
-      const MockUSDT = await ethers.getContractFactory("MockUSDT");
-      const mockUSDT = await MockUSDT.deploy();
-      await mockUSDT.waitForDeployment();
-      USDT_ADDRESS = await mockUSDT.getAddress();
-      console.log("MockUSDT deployed to:", USDT_ADDRESS);
+      console.log("Deploying TestnetUSDT for testing...");
+      const TestnetUSDT = await ethers.getContractFactory("TestnetUSDT");
+      const testnetUSDT = await TestnetUSDT.deploy();
+      await testnetUSDT.waitForDeployment();
+      USDT_ADDRESS = await testnetUSDT.getAddress();
+      console.log("TestnetUSDT deployed to:", USDT_ADDRESS);
     }
   } else {
     // Real USDT on Kaia Mainnet
