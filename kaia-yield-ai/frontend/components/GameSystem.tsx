@@ -51,195 +51,82 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import {
+  kaiaAPI,
+  Mission,
+  UserMissionData,
+  UserStats,
+  LeaderboardData,
+  UserMission
+} from '../services/api';
 
-interface Mission {
-  id: number;
-  name: string;
-  description: string;
-  reward: number;
-  difficulty: number;
-  duration: number;
-  progress: number;
-  completed: boolean;
-  claimed: boolean;
-  category: 'deposit' | 'yield' | 'social' | 'streak' | 'special';
-  icon: string;
-  requirements?: string[];
-  timeLeft?: number;
+interface GameSystemProps {
+  userAddress?: string;
 }
 
-interface UserStats {
-  points: number;
-  level: number;
-  streak: number;
-  hasSocialBonus: boolean;
-  nextLevelPoints: number;
-  currentLevelPoints: number;
-  achievements: string[];
-  badges: string[];
-}
-
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  unlocked: boolean;
-  progress?: number;
-  maxProgress?: number;
-}
-
-interface Reward {
-  type: 'points' | 'bonus' | 'nft' | 'title';
-  value: number | string;
-  icon: string;
-}
-
-const GameSystem: React.FC = () => {
+const GameSystem: React.FC<GameSystemProps> = ({ userAddress }) => {
   const [activeTab, setActiveTab] = useState<'missions' | 'achievements' | 'rewards' | 'leaderboard'>('missions');
-  const [userStats, setUserStats] = useState<UserStats>({
-    points: 1547,
-    level: 8,
-    streak: 12,
-    hasSocialBonus: true,
-    nextLevelPoints: 2000,
-    currentLevelPoints: 1500,
-    achievements: ['first_deposit', 'yield_explorer', 'social_butterfly'],
-    badges: ['streak_master', 'top_performer']
-  });
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [userMissionData, setUserMissionData] = useState<UserMissionData | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
+  const [allMissions, setAllMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [missions, setMissions] = useState<Mission[]>([
-    {
-      id: 1,
-      name: 'Daily Deposit',
-      description: 'Make a deposit today to keep your streak alive',
-      reward: 50,
-      difficulty: 1,
-      duration: 86400,
-      progress: 0,
-      completed: false,
-      claimed: false,
-      category: 'deposit',
-      icon: '💰',
-      timeLeft: 18000
-    },
-    {
-      id: 2,
-      name: 'Yield Explorer',
-      description: 'Try 3 different yield strategies this week',
-      reward: 250,
-      difficulty: 2,
-      duration: 604800,
-      progress: 1,
-      completed: false,
-      claimed: false,
-      category: 'yield',
-      icon: '🎯',
-      requirements: ['Use Stable Earn', 'Use Growth Plus', 'Use High Yield Pro'],
-      timeLeft: 432000
-    },
-    {
-      id: 3,
-      name: 'Social Butterfly',
-      description: 'Share your strategy with 5 friends on LINE',
-      reward: 150,
-      difficulty: 2,
-      duration: 259200,
-      progress: 3,
-      completed: false,
-      claimed: false,
-      category: 'social',
-      icon: '🦋',
-      timeLeft: 172800
-    },
-    {
-      id: 4,
-      name: 'Streak Master',
-      description: 'Maintain a 7-day deposit streak',
-      reward: 500,
-      difficulty: 3,
-      duration: 604800,
-      progress: 5,
-      completed: false,
-      claimed: false,
-      category: 'streak',
-      icon: '🔥',
-      timeLeft: 259200
-    },
-    {
-      id: 5,
-      name: 'First Deposit Champion',
-      description: 'Make your very first deposit on KAIA YIELD AI',
-      reward: 100,
-      difficulty: 1,
-      duration: 86400,
-      progress: 100,
-      completed: true,
-      claimed: false,
-      category: 'deposit',
-      icon: '🏆'
+  // Data fetching function
+  const fetchGameData = async () => {
+    if (!userAddress) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [userStatsData, missionData, leaderboard, missions] = await Promise.all([
+        kaiaAPI.game.getUserStats(userAddress),
+        kaiaAPI.game.getUserMissions(userAddress),
+        kaiaAPI.game.getLeaderboard('overall', 'weekly', 50),
+        kaiaAPI.game.getAllMissions()
+      ]);
+
+      setUserStats(userStatsData);
+      setUserMissionData(missionData);
+      setLeaderboardData(leaderboard);
+      setAllMissions(missions);
+    } catch (err) {
+      console.error('Error fetching game data:', err);
+      setError('Failed to load game data');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    {
-      id: 'first_deposit',
-      name: 'First Steps',
-      description: 'Made your first deposit',
-      icon: '🚀',
-      rarity: 'common',
-      unlocked: true
-    },
-    {
-      id: 'yield_explorer',
-      name: 'Yield Explorer',
-      description: 'Tried 3 different strategies',
-      icon: '🗺️',
-      rarity: 'rare',
-      unlocked: true
-    },
-    {
-      id: 'social_butterfly',
-      name: 'Social Butterfly',
-      description: 'Shared strategies with friends',
-      icon: '🦋',
-      rarity: 'rare',
-      unlocked: true
-    },
-    {
-      id: 'high_roller',
-      name: 'High Roller',
-      description: 'Deposited over $10,000',
-      icon: '💎',
-      rarity: 'epic',
-      unlocked: false,
-      progress: 6543,
-      maxProgress: 10000
-    },
-    {
-      id: 'whale_status',
-      name: 'Whale Status',
-      description: 'Reached $100,000 in deposits',
-      icon: '🐋',
-      rarity: 'legendary',
-      unlocked: false,
-      progress: 6543,
-      maxProgress: 100000
-    },
-    {
-      id: 'streak_legend',
-      name: 'Streak Legend',
-      description: 'Maintained 30-day streak',
-      icon: '⚡',
-      rarity: 'legendary',
-      unlocked: false,
-      progress: 12,
-      maxProgress: 30
+  useEffect(() => {
+    if (userAddress) {
+      fetchGameData();
+
+      // Set up real-time event listeners
+      const handleMissionCompleted = () => {
+        fetchGameData(); // Refresh data when missions are completed
+      };
+
+      const handleLeaderboardUpdate = () => {
+        if (leaderboardData) fetchGameData(); // Refresh leaderboard
+      };
+
+      window.addEventListener('mission-completed', handleMissionCompleted);
+      window.addEventListener('leaderboard-update', handleLeaderboardUpdate);
+
+      return () => {
+        window.removeEventListener('mission-completed', handleMissionCompleted);
+        window.removeEventListener('leaderboard-update', handleLeaderboardUpdate);
+      };
     }
-  ]);
+  }, [userAddress]);
 
-  const levelProgress = ((userStats.points - userStats.currentLevelPoints) / (userStats.nextLevelPoints - userStats.currentLevelPoints)) * 100;
+  // Calculate level progress safely
+  const levelProgress = userStats?.gaming?.nextLevel
+    ? (userStats.gaming.nextLevel.progressPercent || 0)
+    : 0;
 
   const streakData = [
     { day: 'Mon', active: true },
@@ -286,15 +173,65 @@ const GameSystem: React.FC = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  const claimReward = (missionId: number) => {
-    setMissions(prev => prev.map(mission =>
-      mission.id === missionId ? { ...mission, claimed: true } : mission
-    ));
-    setUserStats(prev => ({
-      ...prev,
-      points: prev.points + missions.find(m => m.id === missionId)?.reward || 0
-    }));
+  const claimReward = async (missionId: number) => {
+    if (!userAddress) return;
+
+    try {
+      await kaiaAPI.game.claimReward(userAddress, missionId);
+      // Refresh data after claiming reward
+      await fetchGameData();
+    } catch (error) {
+      console.error('Error claiming reward:', error);
+      setError('Failed to claim reward');
+    }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="text-6xl mb-4">❌</div>
+          <div className="text-xl font-bold mb-2">Error Loading Game Data</div>
+          <div className="text-gray-300 mb-4">{error}</div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={fetchGameData}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-semibold"
+          >
+            Try Again
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no user address
+  if (!userAddress) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="text-6xl mb-4">🎮</div>
+          <div className="text-xl font-bold mb-2">Connect Your Wallet</div>
+          <div className="text-gray-300">Please connect your wallet to access the game system</div>
+        </div>
+      </div>
+    );
+  }
 
   const CategoryIcon = ({ category }: { category: string }) => {
     switch (category) {
@@ -317,7 +254,7 @@ const GameSystem: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-2xl font-bold">
-                  {userStats.level}
+                  {userStats?.gaming?.level || 1}
                 </div>
                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
                   <Crown className="w-3 h-3 text-yellow-400" />
@@ -326,18 +263,18 @@ const GameSystem: React.FC = () => {
 
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                  Level {userStats.level} Player
+                  Level {userStats?.gaming?.level || 1} Player
                 </h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-300">
                   <div className="flex items-center">
                     <Zap className="w-4 h-4 mr-1 text-yellow-400" />
-                    {userStats.points.toLocaleString()} Points
+                    {(userStats?.gaming?.points || 0).toLocaleString()} Points
                   </div>
                   <div className="flex items-center">
                     <Fire className="w-4 h-4 mr-1 text-orange-400" />
-                    {userStats.streak} Day Streak
+                    {userStats?.gaming?.streak || 0} Day Streak
                   </div>
-                  {userStats.hasSocialBonus && (
+                  {userStats?.gaming?.hasSocialBonus && (
                     <div className="flex items-center bg-green-500/20 px-2 py-1 rounded">
                       <Users className="w-4 h-4 mr-1 text-green-400" />
                       Social Bonus
@@ -359,7 +296,7 @@ const GameSystem: React.FC = () => {
                   />
                 </div>
                 <span className="text-sm font-bold">
-                  {userStats.nextLevelPoints - userStats.points} to go
+                  {userStats?.gaming?.nextLevel?.expToNext || 0} to go
                 </span>
               </div>
             </div>
@@ -407,7 +344,7 @@ const GameSystem: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold flex items-center">
                     <Fire className="w-5 h-5 mr-2 text-orange-400" />
-                    Daily Streak - {userStats.streak} Days
+                    Daily Streak - {userStats?.gaming?.streak || 0} Days
                   </h2>
                   <div className="bg-orange-500/20 border border-orange-500/30 rounded-lg px-3 py-1">
                     <span className="text-orange-400 text-sm font-bold">🔥 ON FIRE!</span>
@@ -453,20 +390,20 @@ const GameSystem: React.FC = () => {
                   Active Missions
                 </h2>
 
-                {missions.filter(m => !m.completed || !m.claimed).map((mission, index) => (
+                {userMissionData?.missions?.filter(m => !m.isCompleted || !m.isClaimed).map((mission, index) => (
                   <motion.div
                     key={mission.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     className={`bg-black/30 backdrop-blur-lg rounded-2xl border overflow-hidden ${
-                      mission.completed ? 'border-green-500/30' : 'border-white/10'
+                      mission.isCompleted ? 'border-green-500/30' : 'border-white/10'
                     }`}
                   >
                     <div className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start space-x-4">
-                          <div className="text-4xl">{mission.icon}</div>
+                          <div className="text-4xl">🎯</div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                               <h3 className="text-lg font-bold">{mission.name}</h3>
@@ -474,29 +411,18 @@ const GameSystem: React.FC = () => {
                                 {getDifficultyStars(mission.difficulty)}
                               </div>
                               <div className="bg-purple-500/20 border border-purple-500/30 rounded px-2 py-1">
-                                <CategoryIcon category={mission.category} />
+                                <Target className="w-4 h-4" />
                               </div>
                             </div>
 
                             <p className="text-gray-300 text-sm mb-3">{mission.description}</p>
-
-                            {mission.requirements && (
-                              <div className="space-y-1 mb-3">
-                                {mission.requirements.map((req, i) => (
-                                  <div key={i} className="flex items-center text-sm text-gray-400">
-                                    <CheckCircle className={`w-3 h-3 mr-2 ${i < mission.progress ? 'text-green-400' : 'text-gray-600'}`} />
-                                    {req}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
 
                             {/* Progress Bar */}
                             <div className="mb-3">
                               <div className="flex justify-between text-sm mb-1">
                                 <span className="text-gray-400">Progress</span>
                                 <span className="font-bold">
-                                  {mission.requirements ? `${mission.progress}/${mission.requirements.length}` : `${mission.progress}%`}
+                                  {mission.progressFormatted || `${mission.progress}/${mission.target}`}
                                 </span>
                               </div>
                               <div className="w-full h-2 bg-gray-700 rounded-full">
@@ -504,9 +430,7 @@ const GameSystem: React.FC = () => {
                                   className="h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"
                                   initial={{ width: 0 }}
                                   animate={{
-                                    width: mission.requirements
-                                      ? `${(mission.progress / mission.requirements.length) * 100}%`
-                                      : `${mission.progress}%`
+                                    width: `${(mission.progress / mission.target) * 100}%`
                                   }}
                                   transition={{ duration: 1, ease: "easeOut" }}
                                 />
@@ -519,28 +443,28 @@ const GameSystem: React.FC = () => {
                           <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 mb-3">
                             <div className="flex items-center text-yellow-400">
                               <Gem className="w-4 h-4 mr-1" />
-                              <span className="font-bold">{mission.reward} Points</span>
+                              <span className="font-bold">{mission.reward.points} Points</span>
                             </div>
                           </div>
 
-                          {mission.timeLeft && (
+                          {mission.timeRemaining && (
                             <div className="text-sm text-gray-400 mb-2">
                               <Clock className="w-3 h-3 inline mr-1" />
-                              {formatTime(mission.timeLeft)} left
+                              {mission.timeRemaining} left
                             </div>
                           )}
 
-                          {mission.completed && !mission.claimed ? (
+                          {mission.isCompleted && !mission.isClaimed ? (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => claimReward(mission.id)}
+                              onClick={() => claimReward(mission.missionId)}
                               className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center"
                             >
                               <Gift className="w-4 h-4 mr-1" />
                               Claim Reward
                             </motion.button>
-                          ) : mission.claimed ? (
+                          ) : mission.isClaimed ? (
                             <div className="bg-gray-600 text-gray-300 px-4 py-2 rounded-lg font-semibold flex items-center">
                               <CheckCircle className="w-4 h-4 mr-1" />
                               Claimed
@@ -569,7 +493,7 @@ const GameSystem: React.FC = () => {
               className="space-y-6"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {achievements.map((achievement, index) => (
+                {userStats?.achievements?.map((achievement, index) => (
                   <motion.div
                     key={achievement.id}
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -596,25 +520,6 @@ const GameSystem: React.FC = () => {
 
                         <p className="text-gray-300 text-sm mb-3">{achievement.description}</p>
 
-                        {!achievement.unlocked && achievement.progress !== undefined && achievement.maxProgress && (
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-400">Progress</span>
-                              <span className="font-bold">
-                                {achievement.progress.toLocaleString()} / {achievement.maxProgress.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-700 rounded-full">
-                              <motion.div
-                                className="h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(achievement.progress / achievement.maxProgress) * 100}%` }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
                         {achievement.unlocked && (
                           <div className="flex items-center text-green-400 text-sm">
                             <CheckCircle className="w-4 h-4 mr-1" />
@@ -624,7 +529,7 @@ const GameSystem: React.FC = () => {
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                )) || []}
               </div>
             </motion.div>
           )}
@@ -741,39 +646,44 @@ const GameSystem: React.FC = () => {
                 </div>
 
                 <div className="space-y-0">
-                  {[
-                    { rank: 1, name: 'CryptoMaster 👑', points: 4567, level: 15, badge: '🏆' },
-                    { rank: 2, name: 'YieldHunter 🎯', points: 3890, level: 13, badge: '🥈' },
-                    { rank: 3, name: 'DeFiNinja 🥷', points: 3234, level: 12, badge: '🥉' },
-                    { rank: 4, name: 'SmartInvestor 🧠', points: 2756, level: 10, badge: '⭐' },
-                    { rank: 5, name: 'StrategyKing 👑', points: 2345, level: 9, badge: '⭐' }
-                  ].map((player, index) => (
-                    <motion.div
-                      key={player.rank}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="p-6 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="text-2xl">{player.badge}</div>
-                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                            {player.level}
-                          </div>
-                          <div>
-                            <h4 className="font-bold">{player.name}</h4>
-                            <div className="text-sm text-gray-400">Level {player.level}</div>
-                          </div>
-                        </div>
+                  {leaderboardData?.leaderboard?.map((player, index) => {
+                    const getBadge = (rank: number) => {
+                      switch (rank) {
+                        case 1: return '🏆';
+                        case 2: return '🥈';
+                        case 3: return '🥉';
+                        default: return '⭐';
+                      }
+                    };
 
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-yellow-400">{player.points.toLocaleString()}</div>
-                          <div className="text-sm text-gray-400">Points</div>
+                    return (
+                      <motion.div
+                        key={player.rank}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="p-6 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="text-2xl">{getBadge(player.rank)}</div>
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                              {player.stats.level}
+                            </div>
+                            <div>
+                              <h4 className="font-bold">{player.user.displayName}</h4>
+                              <div className="text-sm text-gray-400">Level {player.stats.level}</div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-yellow-400">{player.stats.points.toLocaleString()}</div>
+                            <div className="text-sm text-gray-400">Points</div>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  }) || []}
                 </div>
               </div>
             </motion.div>

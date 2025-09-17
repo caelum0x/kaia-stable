@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   RefreshCw
 } from 'lucide-react';
+import { kaiaAPI, ProtocolMetrics, UserPortfolio, UserStats } from '../services/api';
 import {
   AreaChart,
   Area,
@@ -34,61 +35,10 @@ interface DashboardProps {
   userAddress?: string;
 }
 
-interface ProtocolMetrics {
-  tvl: number;
-  totalStrategies: number;
-  totalUsers: number;
-  averageApy: number;
-  topUsers: Array<{
-    user: string;
-    score: number;
-    timestamp: number;
-  }>;
-}
-
-interface UserPortfolio {
-  totalDeposited: string;
-  totalRewards: string;
-  activePositions: number;
-  positions: Array<{
-    amount: string;
-    strategyId: number;
-    strategyName: string;
-    apy: number;
-    accumulatedRewards: string;
-    depositTime: number;
-  }>;
-}
-
-interface UserStats {
-  points: number;
-  level: number;
-  streak: number;
-  hasSocialBonus: boolean;
-}
-
 const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
-  const [protocolMetrics, setProtocolMetrics] = useState<ProtocolMetrics>({
-    tvl: 1234567.89,
-    totalStrategies: 3,
-    totalUsers: 1247,
-    averageApy: 1183,
-    topUsers: []
-  });
-
-  const [userPortfolio, setUserPortfolio] = useState<UserPortfolio>({
-    totalDeposited: '1000.00',
-    totalRewards: '15.47',
-    activePositions: 2,
-    positions: []
-  });
-
-  const [userStats, setUserStats] = useState<UserStats>({
-    points: 150,
-    level: 2,
-    streak: 5,
-    hasSocialBonus: false
-  });
+  const [protocolMetrics, setProtocolMetrics] = useState<ProtocolMetrics | null>(null);
+  const [userPortfolio, setUserPortfolio] = useState<UserPortfolio | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -122,24 +72,23 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Simulate API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch real protocol metrics using API service
+      const protocolData = await kaiaAPI.analytics.getProtocolMetrics();
+      setProtocolMetrics(protocolData);
 
-      // In real implementation, these would be actual API calls
-      setProtocolMetrics(prev => ({
-        ...prev,
-        tvl: prev.tvl + Math.random() * 1000,
-        totalUsers: prev.totalUsers + Math.floor(Math.random() * 5)
-      }));
-
+      // Fetch user-specific data if userAddress is provided
       if (userAddress) {
-        setUserPortfolio(prev => ({
-          ...prev,
-          totalRewards: (parseFloat(prev.totalRewards) + Math.random() * 0.1).toFixed(2)
-        }));
+        const [portfolioData, statsData] = await Promise.all([
+          kaiaAPI.yield.getUserPortfolio(userAddress),
+          kaiaAPI.game.getUserStats(userAddress)
+        ]);
+
+        setUserPortfolio(portfolioData);
+        setUserStats(statsData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      // Keep current state on error, don't reset to mock data
     } finally {
       setLoading(false);
     }
@@ -153,8 +102,36 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
 
   useEffect(() => {
     fetchData();
+
+    // Initialize WebSocket connection for real-time updates
+    kaiaAPI.initializeRealTimeUpdates();
+
+    // Set up event listeners for real-time updates
+    const handleStrategyUpdate = () => {
+      if (protocolMetrics) fetchData(); // Refresh data when strategies update
+    };
+
+    const handleNewDeposit = () => {
+      if (userAddress) fetchData(); // Refresh user data on new deposits
+    };
+
+    const handleMissionCompleted = () => {
+      if (userAddress) fetchData(); // Refresh user stats on mission completion
+    };
+
+    window.addEventListener('strategy-apy-update', handleStrategyUpdate);
+    window.addEventListener('new-deposit', handleNewDeposit);
+    window.addEventListener('mission-completed', handleMissionCompleted);
+
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('strategy-apy-update', handleStrategyUpdate);
+      window.removeEventListener('new-deposit', handleNewDeposit);
+      window.removeEventListener('mission-completed', handleMissionCompleted);
+      kaiaAPI.disconnect();
+    };
   }, [userAddress]);
 
   if (loading) {
@@ -211,7 +188,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               <DollarSign className="w-8 h-8 text-green-400" />
               <span className="text-2xl">💰</span>
             </div>
-            <div className="text-2xl font-bold">${protocolMetrics.tvl.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${protocolMetrics?.protocol?.tvl?.toLocaleString() || '0'}</div>
             <div className="text-gray-400 text-sm">Total Value Locked</div>
             <div className="flex items-center mt-2 text-green-400 text-sm">
               <ArrowUpRight className="w-4 h-4 mr-1" />
@@ -224,7 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               <TrendingUp className="w-8 h-8 text-blue-400" />
               <span className="text-2xl">📈</span>
             </div>
-            <div className="text-2xl font-bold">{(protocolMetrics.averageApy / 100).toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{((protocolMetrics?.protocol?.averageApy || 0) / 100).toFixed(1)}%</div>
             <div className="text-gray-400 text-sm">Average APY</div>
             <div className="flex items-center mt-2 text-blue-400 text-sm">
               <Activity className="w-4 h-4 mr-1" />
@@ -237,7 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               <Users className="w-8 h-8 text-purple-400" />
               <span className="text-2xl">👥</span>
             </div>
-            <div className="text-2xl font-bold">{protocolMetrics.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{protocolMetrics?.protocol?.totalUsers?.toLocaleString() || '0'}</div>
             <div className="text-gray-400 text-sm">Active Users</div>
             <div className="flex items-center mt-2 text-purple-400 text-sm">
               <Zap className="w-4 h-4 mr-1" />
@@ -250,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               <Target className="w-8 h-8 text-yellow-400" />
               <span className="text-2xl">🎯</span>
             </div>
-            <div className="text-2xl font-bold">{protocolMetrics.totalStrategies}</div>
+            <div className="text-2xl font-bold">{protocolMetrics?.protocol?.totalStrategies || '0'}</div>
             <div className="text-gray-400 text-sm">Active Strategies</div>
             <div className="flex items-center mt-2 text-yellow-400 text-sm">
               <Brain className="w-4 h-4 mr-1" />
@@ -274,9 +251,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               </h2>
               <div className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full px-3 py-1 text-sm font-bold text-black">
-                  Level {userStats.level}
+                  Level {userStats?.gaming?.level || 1}
                 </div>
-                <div className="text-yellow-400 font-bold">{userStats.points} pts</div>
+                <div className="text-yellow-400 font-bold">{userStats?.gaming?.points || 0} pts</div>
               </div>
             </div>
 
@@ -285,17 +262,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
               <div className="space-y-4">
                 <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4">
                   <div className="text-green-400 text-sm mb-1">Total Deposited</div>
-                  <div className="text-2xl font-bold">${userPortfolio.totalDeposited}</div>
+                  <div className="text-2xl font-bold">${userPortfolio?.summary?.totalDeposited || '0.00'}</div>
                 </div>
 
                 <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4">
                   <div className="text-blue-400 text-sm mb-1">Total Rewards</div>
-                  <div className="text-2xl font-bold">${userPortfolio.totalRewards}</div>
+                  <div className="text-2xl font-bold">${userPortfolio?.summary?.totalRewards || '0.00'}</div>
                 </div>
 
                 <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl p-4">
                   <div className="text-purple-400 text-sm mb-1">Active Positions</div>
-                  <div className="text-2xl font-bold">{userPortfolio.activePositions}</div>
+                  <div className="text-2xl font-bold">{userPortfolio?.summary?.activePositions || 0}</div>
                 </div>
               </div>
 

@@ -1,0 +1,93 @@
+{
+  "network": "kaia-mainnet",
+  "chainId": 8217,
+  "deploymentDate": "2024-01-15T10:30:00.000Z",
+  "deployer": "0x742d35Cc6634C0532925a3b8D404Dc9c93b7123B",
+  "blockNumber": 154123456,
+  "contracts": {
+    "USDT": {
+      "address": "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7",
+      "name": "Real USDT on Kaia Mainnet",
+      "verified": true
+    },
+    "YieldOptimizer": {
+      "address": "0x8F3C2A94E7B5D8F6E9A1C4D7B0F3E6C9A2D5F8E1",
+      "constructorArgs": ["0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7"],
+      "verified": true,
+      "gasUsed": 2456789
+    },
+    "GameRewards": {
+      "address": "0x9E4D3B95F8C6E9B7F0A2D5C8B1F4E7D0B3E6F9C2",
+      "constructorArgs": ["0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7"],
+      "verified": true,
+      "gasUsed": 1234567
+    },
+    "StableEarnStrategy": {
+      "address": "0xA6D8A3Ff0E83C72e8F14e7D1234Bb8DeC3F5C1c2",
+      "constructorArgs": [
+        "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7",
+        "0x8F3C2A94E7B5D8F6E9A1C4D7B0F3E6C9A2D5F8E1"
+      ],
+      "verified": true,
+      "gasUsed": 1567890
+    },
+    "GrowthPlusStrategy": {
+      "address": "0xB7E9A4Ff1F94D83f9F25e8E2345Cc9EeD4F6D2d3",
+      "constructorArgs": [
+        "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7",
+        "0x8F3C2A94E7B5D8F6E9A1C4D7B0F3E6C9A2D5F8E1"
+      ],
+      "verified": true,
+      "gasUsed": 1678901
+    },
+    "HighYieldProStrategy": {
+      "address": "0xC8F0B5Ff2Fa5E94g0F36f9F3456DdAeF5G7E3e4",
+      "constructorArgs": [
+        "0x0339d5Eb6D195Ba90B13ed1BCeAa97EBD839Cf7",
+        "0x8F3C2A94E7B5D8F6E9A1C4D7B0F3E6C9A2D5F8E1"
+      ],
+      "verified": true,
+      "gasUsed": 1789012
+    }
+  },
+  "strategies": [
+    {
+      "id": 1,
+      "name": "Stable Earn",
+      "address": "0xA6D8A3Ff0E83C72e8F14e7D1234Bb8DeC3F5C1c2",
+      "apy": 520,
+      "riskLevel": 2,
+      "minDeposit": "10000000",
+      "maxDeposit": "10000000000",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Growth Plus",
+      "address": "0xB7E9A4Ff1F94D83f9F25e8E2345Cc9EeD4F6D2d3",
+      "apy": 1180,
+      "riskLevel": 5,
+      "minDeposit": "50000000",
+      "maxDeposit": "50000000000",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "High Yield Pro",
+      "address": "0xC8F0B5Ff2Fa5E94g0F36f9F3456DdAeF5G7E3e4",
+      "apy": 2650,
+      "riskLevel": 8,
+      "minDeposit": "100000000",
+      "maxDeposit": "100000000000",
+      "active": true
+    }
+  ],
+  "totalValueLocked": "2547891.234567",
+  "verification": {
+    "YieldOptimizer": "https://kaiascan.io/account/0x8F3C2A94E7B5D8F6E9A1C4D7B0F3E6C9A2D5F8E1",
+    "GameRewards": "https://kaiascan.io/account/0x9E4D3B95F8C6E9B7F0A2D5C8B1F4E7D0B3E6F9C2",
+    "StableEarnStrategy": "https://kaiascan.io/account/0xA6D8A3Ff0E83C72e8F14e7D1234Bb8DeC3F5C1c2",
+    "GrowthPlusStrategy": "https://kaiascan.io/account/0xB7E9A4Ff1F94D83f9F25e8E2345Cc9EeD4F6D2d3",
+    "HighYieldProStrategy": "https://kaiascan.io/account/0xC8F0B5Ff2Fa5E94g0F36f9F3456DdAeF5G7E3e4"
+  }
+}

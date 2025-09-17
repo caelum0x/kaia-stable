@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - KAIA YIELD AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #10B981 0%, #3B82F6 50%, #8B5CF6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 40px 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .offline-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, #FCD34D, #F97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .offline-message {
+            font-size: 16px;
+            margin-bottom: 24px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .offline-features {
+            text-align: left;
+            margin: 24px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .offline-features h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #FCD34D;
+        }
+
+        .offline-features ul {
+            list-style: none;
+            font-size: 14px;
+        }
+
+        .offline-features li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            opacity: 0.9;
+        }
+
+        .offline-features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10B981;
+            font-weight: bold;
+        }
+
+        .retry-button {
+            background: linear-gradient(45deg, #10B981, #3B82F6);
+            border: none;
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .retry-button:active {
+            transform: translateY(0);
+        }
+
+        .connection-status {
+            margin-top: 24px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .connection-status.offline {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #FCA5A5;
+        }
+
+        .connection-status.online {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #86EFAC;
+        }
+
+        .app-info {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+
+            .offline-icon {
+                font-size: 64px;
+            }
+
+            .offline-title {
+                font-size: 20px;
+            }
+
+            .offline-message {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">🤖</div>
+
+        <h1 class="offline-title">KAIA YIELD AI</h1>
+
+        <p class="offline-message">
+            You're currently offline, but don't worry! Your farming continues in the background.
+        </p>
+
+        <div class="offline-features">
+            <h3>Available Offline Features:</h3>
+            <ul>
+                <li>View cached portfolio data</li>
+                <li>Browse strategy information</li>
+                <li>Check mission progress</li>
+                <li>Review yield calculations</li>
+                <li>Plan your next farming moves</li>
+            </ul>
+        </div>
+
+        <div class="connection-status offline" id="connectionStatus">
+            <span>📡 Connection Status: Offline</span>
+        </div>
+
+        <button class="retry-button" onclick="retryConnection()" id="retryButton">
+            <span class="spinner" id="spinner" style="display: none;"></span>
+            <span id="buttonText">🔄 Retry Connection</span>
+        </button>
+
+        <div class="app-info">
+            <p><strong>KAIA YIELD AI</strong> - AI-Powered USDT Yield Farming</p>
+            <p>LINE Mini dApp • Kaia Network</p>
+        </div>
+    </div>
+
+    <script>
+        let isRetrying = false;
+
+        // Check connection status
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+
+            if (navigator.onLine) {
+                statusElement.className = 'connection-status online';
+                statusElement.innerHTML = '<span>✅ Connection Status: Online</span>';
+
+                // Auto-retry when back online
+                if (!isRetrying) {
+                    setTimeout(() => {
+                        retryConnection();
+                    }, 1000);
+                }
+            } else {
+                statusElement.className = 'connection-status offline';
+                statusElement.innerHTML = '<span>📡 Connection Status: Offline</span>';
+            }
+        }
+
+        // Retry connection
+        async function retryConnection() {
+            if (isRetrying) return;
+
+            isRetrying = true;
+            const button = document.getElementById('retryButton');
+            const spinner = document.getElementById('spinner');
+            const buttonText = document.getElementById('buttonText');
+
+            // Show loading state
+            spinner.style.display = 'inline-block';
+            buttonText.textContent = 'Connecting...';
+            button.disabled = true;
+
+            try {
+                // Try to fetch the app
+                const response = await fetch('/line-dapp', {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+
+                if (response.ok) {
+                    buttonText.textContent = '✅ Connected! Redirecting...';
+
+                    // Redirect back to app
+                    setTimeout(() => {
+                        window.location.href = '/line-dApp';
+                    }, 1500);
+                } else {
+                    throw new Error('Server not available');
+                }
+            } catch (error) {
+                console.log('Connection retry failed:', error);
+
+                // Reset button state
+                spinner.style.display = 'none';
+                buttonText.textContent = '🔄 Retry Connection';
+                button.disabled = false;
+
+                // Show temporary error message
+                const originalText = buttonText.textContent;
+                buttonText.textContent = '❌ Still offline';
+                setTimeout(() => {
+                    buttonText.textContent = originalText;
+                }, 2000);
+            }
+
+            isRetrying = false;
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initial status check
+        updateConnectionStatus();
+
+        // Auto-retry every 30 seconds when offline
+        setInterval(() => {
+            if (!navigator.onLine && !isRetrying) {
+                console.log('Auto-retry: Still offline, checking connection...');
+            }
+        }, 30000);
+
+        // Service Worker messaging
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'CACHE_UPDATED') {
+                    console.log('Cache updated, new content available');
+
+                    // Show update notification
+                    const statusElement = document.getElementById('connectionStatus');
+                    const originalHTML = statusElement.innerHTML;
+                    statusElement.className = 'connection-status online';
+                    statusElement.innerHTML = '<span>🔄 New content available! Tap retry to update.</span>';
+
+                    setTimeout(() => {
+                        statusElement.innerHTML = originalHTML;
+                        updateConnectionStatus();
+                    }, 5000);
+                }
+            });
+        }
+
+        // Preload critical resources when connection becomes available
+        function preloadCriticalResources() {
+            const criticalUrls = [
+                '/line-dapp',
+                '/api/strategies',
+                '/api/analytics/protocol-metrics'
+            ];
+
+            criticalUrls.forEach(url => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            });
+        }
+
+        // Start preloading when online
+        if (navigator.onLine) {
+            preloadCriticalResources();
+        }
+
+        window.addEventListener('online', preloadCriticalResources);
+    </script>
+</body>
+</html>

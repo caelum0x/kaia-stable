@@ -103,173 +103,9 @@ const SocialTrading: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState<'all' | 'low' | 'medium' | 'high'>('all');
 
-  const realLeaderboard: LeaderboardEntry[] = [
-    {
-      user: '0x8F3C...F8E1',
-      displayName: 'KaiaYieldMaster 🚀',
-      avatar: '👑',
-      score: 3847,
-      level: 18,
-      winRate: 91.3,
-      totalEarned: 67890.45,
-      strategies: 14,
-      followers: 2847,
-      trend: 'up',
-      change24h: 7.2,
-      socialBonus: true
-    },
-    {
-      user: '0x9E4D...F9C2',
-      displayName: 'KaiaDeFiNinja 🥷',
-      avatar: '🥷',
-      score: 3234,
-      level: 16,
-      winRate: 88.7,
-      totalEarned: 54320.78,
-      strategies: 11,
-      followers: 1934,
-      trend: 'up',
-      change24h: 4.8,
-      socialBonus: true
-    },
-    {
-      user: '0xA6D8...C1c2',
-      displayName: 'KaiaHunter 🎯',
-      avatar: '🎯',
-      score: 2956,
-      level: 14,
-      winRate: 85.2,
-      totalEarned: 43567.23,
-      strategies: 16,
-      followers: 1456,
-      trend: 'up',
-      change24h: 2.3,
-      socialBonus: true
-    },
-    {
-      user: '0xB7E9...D2d3',
-      displayName: 'KaiaWhale 🐋',
-      avatar: '🐋',
-      score: 2789,
-      level: 13,
-      winRate: 82.4,
-      totalEarned: 38934.56,
-      strategies: 8,
-      followers: 1123,
-      trend: 'stable',
-      change24h: 0.8,
-      socialBonus: true
-    },
-    {
-      user: '0xC8F0...E3e4',
-      displayName: 'KaiaInvestor 🧠',
-      avatar: '🧠',
-      score: 2634,
-      level: 12,
-      winRate: 79.9,
-      totalEarned: 34678.91,
-      strategies: 12,
-      followers: 845,
-      trend: 'up',
-      change24h: 3.5,
-      socialBonus: false
-    }
-  ];
+  // Real leaderboard data will be fetched from blockchain
 
-  const mockStrategies: TradingStrategy[] = [
-    {
-      id: 1,
-      user: '0x1234...5678',
-      name: 'Stable Growth Pro',
-      description: 'Conservative strategy focusing on stable returns with minimal risk',
-      apy: 15.7,
-      risk: 3,
-      followers: 234,
-      copiers: 156,
-      performance: 94.2,
-      timeframe: '30 days',
-      tags: ['Stable', 'Low Risk', 'Consistent'],
-      isPublic: true,
-      likes: 89,
-      comments: 23
-    },
-    {
-      id: 2,
-      user: '0x8765...4321',
-      name: 'DeFi Maximizer',
-      description: 'Aggressive multi-protocol yield farming strategy',
-      apy: 42.3,
-      risk: 8,
-      followers: 187,
-      copiers: 98,
-      performance: 87.6,
-      timeframe: '14 days',
-      tags: ['High Yield', 'Advanced', 'Multi-Protocol'],
-      isPublic: true,
-      likes: 156,
-      comments: 45
-    },
-    {
-      id: 3,
-      user: '0x2468...1357',
-      name: 'Balanced Blend',
-      description: 'Balanced approach mixing stable and growth opportunities',
-      apy: 24.1,
-      risk: 5,
-      followers: 298,
-      copiers: 201,
-      performance: 91.8,
-      timeframe: '45 days',
-      tags: ['Balanced', 'Diversified', 'Medium Risk'],
-      isPublic: true,
-      likes: 67,
-      comments: 19
-    }
-  ];
-
-  const mockSocialFeed: SocialPost[] = [
-    {
-      id: '1',
-      user: '0x1234...5678',
-      username: 'YieldMaster 🚀',
-      avatar: '👑',
-      content: 'Just hit 87% win rate on my Stable Growth Pro strategy! The secret is patience and proper risk management. 📈',
-      strategy: 'Stable Growth Pro',
-      performance: 15.7,
-      timestamp: '2 hours ago',
-      likes: 45,
-      comments: 12,
-      shares: 8,
-      isLiked: false
-    },
-    {
-      id: '2',
-      user: '0x8765...4321',
-      username: 'DeFi Ninja 🥷',
-      avatar: '🥷',
-      content: 'New strategy alert! My DeFi Maximizer is now public. 42% APY but remember - high rewards come with high risks! DYOR 🔥',
-      strategy: 'DeFi Maximizer',
-      performance: 42.3,
-      timestamp: '4 hours ago',
-      likes: 78,
-      comments: 23,
-      shares: 15,
-      isLiked: true
-    },
-    {
-      id: '3',
-      user: '0x2468...1357',
-      username: 'Yield Hunter 🎯',
-      avatar: '🎯',
-      content: 'Market volatility is creating amazing opportunities! My Balanced Blend strategy is up 24% this month 🚀',
-      performance: 24.1,
-      timestamp: '6 hours ago',
-      likes: 34,
-      comments: 9,
-      shares: 5,
-      isLiked: false
-    }
-  ];
+  // Real strategies and social feed will be fetched from backend API
 
   const performanceData = [
     { day: 'Mon', performance: 98 },
@@ -285,13 +121,32 @@ const SocialTrading: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Simulate API calls
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setLeaderboard(mockLeaderboard);
-        setStrategies(mockStrategies);
-        setSocialFeed(mockSocialFeed);
+        // Fetch real leaderboard data from blockchain
+        const leaderboardResponse = await fetch('/api/game/leaderboard');
+        if (leaderboardResponse.ok) {
+          const leaderboardData = await leaderboardResponse.json();
+          setLeaderboard(leaderboardData);
+        }
+
+        // Fetch real strategies from blockchain
+        const strategiesResponse = await fetch('/api/strategies/social');
+        if (strategiesResponse.ok) {
+          const strategiesData = await strategiesResponse.json();
+          setStrategies(strategiesData);
+        }
+
+        // Fetch social feed from backend
+        const feedResponse = await fetch('/api/social/feed');
+        if (feedResponse.ok) {
+          const feedData = await feedResponse.json();
+          setSocialFeed(feedData);
+        }
       } catch (error) {
         console.error('Error fetching social data:', error);
+        // Initialize with empty arrays instead of mock data
+        setLeaderboard([]);
+        setStrategies([]);
+        setSocialFeed([]);
       } finally {
         setLoading(false);
       }

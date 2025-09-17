@@ -1,4 +1,4 @@
-# KAIA YIELD AI 🤖
+foc# KAIA YIELD AI 🤖
 
 An AI-powered stablecoin yield optimization Mini-dApp for the Kaia Wave Stablecoin Summer Hackathon.
 
