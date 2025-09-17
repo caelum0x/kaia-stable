@@ -102,6 +102,56 @@ export interface YieldCalculation {
 }
 
 export interface AIRecommendation {
+  strategy_id: number;
+  strategy_name: string;
+  score: number;
+  confidence: 'High' | 'Medium' | 'Low';
+  explanation: string;
+  expected_return: number;
+  apy: number;
+  risk_level: number;
+  category: string;
+}
+
+export interface MLMetrics {
+  modelAccuracy: number;
+  predictionConfidence: number;
+  dataQuality: number;
+  marketVolatility: number;
+  lastTraining: string;
+}
+
+export interface RadarData {
+  metric: string;
+  value: number;
+  fullMark: number;
+}
+
+export interface PerformancePrediction {
+  month: string;
+  conservative: number;
+  predicted: number;
+  optimistic: number;
+}
+
+export interface StrategyComparison {
+  name: string;
+  risk: number;
+  apy: number;
+  score: number;
+}
+
+export interface EnhancedUserRiskProfile {
+  riskProfile: string;
+  riskTolerance: number;
+  averageRisk: number;
+  diversification: number;
+  strategiesUsed: number;
+  totalDeposited: string;
+  recommendations: string[];
+}
+
+export interface LegacyAIRecommendation {
   recommendedStrategy: {
     id: number;
     name: string;
@@ -123,6 +173,82 @@ export interface AIRecommendation {
   lastUpdated: string;
 }
 
+export interface PortfolioPerformanceData {
+  name: string;
+  portfolio: number;
+  market: number;
+}
+
+export interface StrategyDistributionData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface YieldHistoryData {
+  day: string;
+  yield: number;
+}
+
+export interface SocialMetrics {
+  activeTraders: number;
+  strategyCopies: number;
+  socialVolume: string;
+  averageSocialAPY: number;
+}
+
+export interface SocialPerformanceData {
+  day: string;
+  performance: number;
+}
+
+export interface SocialStrategy extends TradingStrategy {
+  userId: string;
+  userName: string;
+  verified: boolean;
+  copiedByUser?: boolean;
+}
+
+export interface SocialFeedPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  strategyId?: number;
+  strategyName?: string;
+  performance?: number;
+  timestamp: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  isLiked: boolean;
+  attachments?: Array<{
+    type: 'strategy' | 'image' | 'chart';
+    data: any;
+  }>;
+}
+
+export interface TradingStrategy {
+  id: number;
+  userId: string;
+  name: string;
+  description: string;
+  apy: number;
+  risk: number;
+  followers: number;
+  copiers: number;
+  performance: number;
+  timeframe: string;
+  tags: string[];
+  isPublic: boolean;
+  likes: number;
+  comments: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProtocolMetrics {
   protocol: {
     tvl: number;
@@ -133,6 +259,7 @@ export interface ProtocolMetrics {
     averageApy: number;
     totalDeposits: number;
     totalVolume: number;
+    newUsersToday: number;
   };
   strategies: Strategy[];
   market: {
@@ -472,8 +599,8 @@ export class YieldService {
     return this.api.get(`/yield/history/${userAddress}?page=${page}&limit=${limit}`);
   }
 
-  async getRecommendation(userAddress: string): Promise<AIRecommendation> {
-    return this.api.get<AIRecommendation>(`/yield/recommend/${userAddress}`);
+  async getRecommendation(userAddress: string): Promise<LegacyAIRecommendation> {
+    return this.api.get<LegacyAIRecommendation>(`/yield/recommend/${userAddress}`);
   }
 }
 
@@ -502,6 +629,113 @@ export class AnalyticsService {
 
   async getDashboardData(): Promise<any> {
     return this.api.get('/analytics/dashboard');
+  }
+
+  async getPortfolioPerformance(userAddress?: string, period = '6m'): Promise<PortfolioPerformanceData[]> {
+    const endpoint = userAddress
+      ? `/analytics/portfolio-performance/${userAddress}?period=${period}`
+      : `/analytics/portfolio-performance?period=${period}`;
+    return this.api.get<PortfolioPerformanceData[]>(endpoint);
+  }
+
+  async getStrategyDistribution(userAddress?: string): Promise<StrategyDistributionData[]> {
+    const endpoint = userAddress
+      ? `/analytics/strategy-distribution/${userAddress}`
+      : '/analytics/strategy-distribution';
+    return this.api.get<StrategyDistributionData[]>(endpoint);
+  }
+
+  async getYieldHistory(period = '7d'): Promise<YieldHistoryData[]> {
+    return this.api.get<YieldHistoryData[]>(`/analytics/yield-history?period=${period}`);
+  }
+
+  async getSocialMetrics(): Promise<SocialMetrics> {
+    return this.api.get<SocialMetrics>('/analytics/social-metrics');
+  }
+
+  async getSocialPerformance(period = '7d'): Promise<SocialPerformanceData[]> {
+    return this.api.get<SocialPerformanceData[]>(`/analytics/social-performance?period=${period}`);
+  }
+
+  async getAIRecommendations(userAddress?: string, investmentAmount = 1000): Promise<AIRecommendation[]> {
+    const params = new URLSearchParams();
+    if (userAddress) params.append('userAddress', userAddress);
+    params.append('amount', investmentAmount.toString());
+    return this.api.get<AIRecommendation[]>(`/ai/recommendations?${params.toString()}`);
+  }
+
+  async getUserRiskProfile(userAddress: string): Promise<EnhancedUserRiskProfile> {
+    return this.api.get<EnhancedUserRiskProfile>(`/ai/risk-profile/${userAddress}`);
+  }
+
+  async getMLMetrics(): Promise<MLMetrics> {
+    return this.api.get<MLMetrics>('/ai/ml-metrics');
+  }
+
+  async getPortfolioRadarData(userAddress?: string): Promise<RadarData[]> {
+    const endpoint = userAddress
+      ? `/ai/portfolio-radar/${userAddress}`
+      : '/ai/portfolio-radar';
+    return this.api.get<RadarData[]>(endpoint);
+  }
+
+  async getPerformancePrediction(strategyId?: number, amount = 1000): Promise<PerformancePrediction[]> {
+    const params = new URLSearchParams();
+    if (strategyId) params.append('strategyId', strategyId.toString());
+    params.append('amount', amount.toString());
+    return this.api.get<PerformancePrediction[]>(`/ai/performance-prediction?${params.toString()}`);
+  }
+
+  async getStrategyComparison(): Promise<StrategyComparison[]> {
+    return this.api.get<StrategyComparison[]>('/ai/strategy-comparison');
+  }
+}
+
+export class SocialService {
+  constructor(private api: APIClient) {}
+
+  async getSocialStrategies(filter?: {
+    riskLevel?: 'low' | 'medium' | 'high';
+    category?: string;
+    minAPY?: number;
+    maxAPY?: number;
+    sort?: 'apy' | 'performance' | 'followers' | 'recent';
+  }): Promise<SocialStrategy[]> {
+    const params = new URLSearchParams();
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, value.toString());
+      });
+    }
+    return this.api.get<SocialStrategy[]>(`/social/strategies?${params.toString()}`);
+  }
+
+  async getSocialFeed(page = 1, limit = 20): Promise<{
+    posts: SocialFeedPost[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }> {
+    return this.api.get(`/social/feed?page=${page}&limit=${limit}`);
+  }
+
+  async likePost(postId: string): Promise<{ success: boolean; likes: number }> {
+    return this.api.post(`/social/posts/${postId}/like`);
+  }
+
+  async sharePost(postId: string): Promise<{ success: boolean; shares: number }> {
+    return this.api.post(`/social/posts/${postId}/share`);
+  }
+
+  async followStrategy(strategyId: number): Promise<{ success: boolean; message: string }> {
+    return this.api.post(`/social/strategies/${strategyId}/follow`);
+  }
+
+  async copyStrategy(strategyId: number, amount: number): Promise<{ success: boolean; message: string; copyId: string }> {
+    return this.api.post(`/social/strategies/${strategyId}/copy`, { amount });
   }
 }
 
@@ -650,6 +884,7 @@ export class KaiaYieldAPI {
   public strategies: StrategiesService;
   public yield: YieldService;
   public analytics: AnalyticsService;
+  public social: SocialService;
   public game: GameService;
   public websocket: WebSocketService;
 
@@ -658,6 +893,7 @@ export class KaiaYieldAPI {
     this.strategies = new StrategiesService(this.apiClient);
     this.yield = new YieldService(this.apiClient);
     this.analytics = new AnalyticsService(this.apiClient);
+    this.social = new SocialService(this.apiClient);
     this.game = new GameService(this.apiClient);
     this.websocket = new WebSocketService();
   }
@@ -699,7 +935,7 @@ export class KaiaYieldAPI {
 export const kaiaAPI = new KaiaYieldAPI();
 
 // Export individual services for convenience
-export const { strategies, yield: yieldService, analytics, game, websocket } = kaiaAPI;
+export const { strategies, yield: yieldService, analytics, social, game, websocket } = kaiaAPI;
 
 // Export default
 export default kaiaAPI;
